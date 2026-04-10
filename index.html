@@ -113,12 +113,14 @@
   <table>
     <thead><tr>
       <th>提送日期</th>
-      <th>類型</th>
+      <th>提送檔名</th>
       <th>釋疑概述</th>
+      <th>回覆狀態</th>
       <th>回覆日期</th>
       <th>回覆概述</th>
       <th>提送人員</th>
-      <th>狀態</th>
+      <th>檔案類型</th>
+      <th>聯絡對象</th>
       <th>備註</th>
       <th></th>
     </tr></thead>
@@ -131,32 +133,34 @@
     <h3 id="modalTitle">新增溝通記錄</h3>
     <div class="form-2col">
       <div class="form-row"><label>提送日期</label><input type="date" id="fDate"></div>
-      <div class="form-row"><label>類型</label>
-        <select id="fTypeInput">
-          <option value="疑義紀錄">疑義紀錄</option>
-          <option value="私訊聯絡">私訊聯絡</option>
-          <option value="會議記錄">會議記錄</option>
-          <option value="其他">其他</option>
-        </select>
-      </div>
+      <div class="form-row"><label>提送檔名</label><input type="text" id="fTypeInput" placeholder="例：培德A-疑義紀錄-20250321"></div>
     </div>
     <div class="form-row"><label>釋疑概述</label><textarea id="fDesc" placeholder="說明疑義內容..."></textarea></div>
     <div class="form-2col">
+      <div class="form-row"><label>回覆狀態</label>
+        <select id="fReplyStatus">
+          <option value="已回覆">已回覆</option>
+          <option value="待回覆">待回覆</option>
+          <option value="等待中">等待中</option>
+          <option value="急件">急件</option>
+        </select>
+      </div>
       <div class="form-row"><label>回覆日期</label><input type="date" id="fReplyDate"></div>
       <div class="form-row"><label>提送人員</label><input type="text" id="fPerson" placeholder="姓名"></div>
     </div>
     <div class="form-row"><label>回覆概述</label><textarea id="fReply" placeholder="回覆內容..."></textarea></div>
     <div class="form-2col">
-      <div class="form-row"><label>狀態</label>
+      <div class="form-row"><label>檔案類型</label>
         <select id="fStatusInput">
-          <option value="replied">已回覆</option>
-          <option value="pending">待回覆</option>
-          <option value="waiting">等待中</option>
-          <option value="urgent">緊急</option>
+          <option value="word">word</option>
+          <option value="訊息">訊息</option>
+          <option value="PDF">PDF</option>
+          <option value="其他">其他</option>
         </select>
       </div>
-      <div class="form-row"><label>備註</label><input type="text" id="fNote" placeholder="補充說明..."></div>
+      <div class="form-row"><label>聯絡對象</label><input type="text" id="fContact" placeholder="例：喬家福-孫副理"></div>
     </div>
+    <div class="form-row"><label>備註</label><input type="text" id="fNote" placeholder="補充說明..."></div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal()">取消</button>
       <button class="btn btn-dark" onclick="saveRecord()">儲存</button>
@@ -228,7 +232,7 @@ function render(){
   });
   const tbody = document.getElementById('tbody');
   if(!rows.length){
-    tbody.innerHTML='<tr><td colspan="9"><div class="empty">沒有符合的記錄</div></td></tr>';
+    tbody.innerHTML='<tr><td colspan="11"><div class="empty">沒有符合的記錄</div></td></tr>';
     updateStats(); return;
   }
   tbody.innerHTML = rows.map(r=>{
@@ -237,12 +241,14 @@ function render(){
     const replyHtml = (r.reply||'').replace(/\n/g,'<br>');
     return '<tr>'
       +'<td style="white-space:nowrap">'+r.date+'</td>'
-      +'<td><span class="type-tag">'+r.type+'</span></td>'
+      +'<td style="white-space:nowrap;font-size:12px;color:#666">'+(r.type||'—')+'</td>'
       +'<td class="desc-cell">'+descHtml+'</td>'
+      +'<td>'+(r.replyStatus ? '<span class="badge '+{'已回覆':'b-replied','待回覆':'b-pending','等待中':'b-waiting','急件':'b-urgent'}[r.replyStatus]+'">'+r.replyStatus+'</span>' : '—')+'</td>'
       +'<td style="white-space:nowrap">'+(r.replyDate||'—')+'</td>'
       +'<td class="desc-cell">'+(replyHtml||'—')+'</td>'
       +'<td style="white-space:nowrap">'+r.person+'</td>'
       +'<td><span class="badge '+s.cls+'">'+s.label+'</span></td>'
+      +'<td style="white-space:nowrap;font-size:12px;color:#666">'+(r.contact||'—')+'</td>'
       +'<td class="desc-cell" style="color:#999;font-size:12px">'+(r.note||'—')+'</td>'
       +'<td style="white-space:nowrap">'
       +'<button class="act-btn" onclick="editRecord('+r.id+')" title="編輯">✏️</button>'
@@ -272,12 +278,14 @@ function openModal(id){
   document.getElementById('modalTitle').textContent = id?'編輯記錄':'新增溝通記錄';
   const r = id ? data.find(x=>x.id===id) : {date:'',type:'疑義紀錄',desc:'',replyDate:'',reply:'',person:'',status:'pending',note:''};
   document.getElementById('fDate').value=r.date||'';
-  document.getElementById('fTypeInput').value=r.type||'疑義紀錄';
+  document.getElementById('fTypeInput').value=r.type||'';
   document.getElementById('fDesc').value=r.desc||'';
+  document.getElementById('fReplyStatus').value=r.replyStatus||'待回覆';
   document.getElementById('fReplyDate').value=r.replyDate||'';
   document.getElementById('fReply').value=r.reply||'';
   document.getElementById('fPerson').value=r.person||'';
-  document.getElementById('fStatusInput').value=r.status||'pending';
+  document.getElementById('fStatusInput').value=r.status||'word';
+  document.getElementById('fContact').value=r.contact||'';
   document.getElementById('fNote').value=r.note||'';
   document.getElementById('modalBg').style.display='flex';
 }
@@ -290,10 +298,12 @@ function saveRecord(){
     date: document.getElementById('fDate').value,
     type: document.getElementById('fTypeInput').value,
     desc: document.getElementById('fDesc').value,
+    replyStatus: document.getElementById('fReplyStatus').value,
     replyDate: document.getElementById('fReplyDate').value,
     reply: document.getElementById('fReply').value,
     person: document.getElementById('fPerson').value,
     status: document.getElementById('fStatusInput').value,
+    contact: document.getElementById('fContact').value,
     note: document.getElementById('fNote').value
   };
   if(!rec.date||!rec.desc){alert('請填寫提送日期與釋疑概述');return;}
@@ -324,10 +334,10 @@ if(sessionStorage.getItem(SESSION_KEY)==='1'){load();render();}
 function exportExcel(){
   if(!data.length){alert('沒有資料可以匯出');return;}
   var sl={replied:'已回覆',pending:'待回覆',waiting:'等待中',urgent:'緊急'};
-  var h=['提送日期','類型','釋疑概述','回覆日期','回覆概述','提送人員','狀態','備註'];
+  var h=['提送日期','提送檔名','釋疑概述','回覆狀態','回覆日期','回覆概述','提送人員','檔案類型','聯絡對象','備註'];
   var lines=[h.join(',')];
   data.forEach(function(r){
-    var row=[r.date,r.type,r.desc,r.replyDate,r.reply,r.person,sl[r.status]||'',r.note];
+    var row=[r.date,r.type,r.desc,r.replyStatus||'',r.replyDate,r.reply,r.person,r.status||'',r.contact||'',r.note];
     lines.push(row.map(function(v){
       v=String(v||'').replace(/\n/g,' ').replace(/"/g,'""');
       return '"'+v+'"';
